@@ -75,51 +75,48 @@ public class AppStartup implements ApplicationListener<ApplicationEvent> {
         }
         autoStartFired = true;
 
-        healthy = testSystemHealth();
-        if (healthy) {
-
-            if (Boolean.valueOf(System.getProperty("geth.init.only"))) {
-                try {
-                    String enodeURL = gethRunner.getEnodeURL();
-                    System.err.println("Generated node keys and enode url:");
-                    System.err.println(enodeURL);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                // Exit after all system initialization has completed
-                System.err.println("initialization complete.");
-                System.exit(0);
+        if (Boolean.valueOf(System.getProperty("geth.init.only"))) {
+            try {
+                gethRunner.downloadQuorumIfNeeded();
+                String enodeURL = gethRunner.getEnodeURL();
+                System.err.println("Generated node keys and enode url:");
+                System.err.println(enodeURL);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-            if (Boolean.valueOf(System.getProperty("geth.init.example"))) {
-                // Exit after all system initialization has completed
-                gethConfig.setAutoStart(false);
-                gethConfig.setAutoStop(false);
-                gethConfig.setRpcUrl("http://localhost:22000");
-                try {
-                    gethConfig.save();
-                } catch (IOException e) {
-                    LOG.error("Error writing application.properties: " + e.getMessage());
-                    System.exit(1);
-                }
-                System.out.println("initialization complete. wrote quorum-example config. exiting.");
-                System.exit(0);
-            }
-
-            if (gethConfig.isAutoStart()) {
-                LOG.info("Autostarting geth node");
-                healthy = geth.start();
-                if (!healthy) {
-                    addError("GETH FAILED TO START");
-                }
-
-            } else {
-                // run startup tasks only
-                geth.runPostStartupTasks();
-            }
+            // Exit after all system initialization has completed
+            System.err.println("initialization complete.");
+            System.exit(0);
         }
 
-        if (!healthy) {
+        if (Boolean.valueOf(System.getProperty("geth.init.example"))) {
+            // Exit after all system initialization has completed
+            gethConfig.setAutoStart(false);
+            gethConfig.setAutoStop(false);
+            gethConfig.setRpcUrl("http://localhost:22000");
+            try {
+                gethConfig.save();
+            } catch (IOException e) {
+                LOG.error("Error writing application.properties: " + e.getMessage());
+                System.exit(1);
+            }
+            System.out.println("initialization complete. wrote quorum-example config. exiting.");
+            System.exit(0);
+        }
+
+        if (gethConfig.isAutoStart()) {
+            LOG.info("Autostarting geth node");
+            healthy = geth.start();
+            if (!healthy) {
+                addError("GETH FAILED TO START");
+            }
+
+        } else {
+            // run startup tasks only
+            geth.runPostStartupTasks();
+        }
+
+        if (!this.errors.isEmpty()) {
             System.out.println(((ContextRefreshedEvent) event).getApplicationContext());
             printErrorReport();
             return;

@@ -344,6 +344,8 @@ public class GethHttpServiceImpl implements GethHttpService {
         try {
             String dataDir = gethConfig.getGethDataDirPath();
 
+            gethRunner.downloadQuorumIfNeeded();
+
             // copy keystore if necessary
             File keystoreDir = new File(FileUtils.expandPath(dataDir, "keystore"));
             if (!keystoreDir.exists()) {
