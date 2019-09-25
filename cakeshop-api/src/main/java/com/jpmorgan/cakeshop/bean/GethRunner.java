@@ -2,7 +2,6 @@ package com.jpmorgan.cakeshop.bean;
 
 import static com.jpmorgan.cakeshop.service.impl.NodeServiceImpl.STATIC_NODES_JSON;
 import static com.jpmorgan.cakeshop.util.FileUtils.expandPath;
-import static com.jpmorgan.cakeshop.util.ProcessUtils.ensureFileIsExecutable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,7 +55,7 @@ public class GethRunner {
     private Boolean isEmbeddedQuorum;
 
     private String binPath;
-    private String enodeUrl;
+    private String managedEnodeId;
 
     @Autowired
     public GethRunner(GethConfig gethConfig, ObjectMapper jsonMapper, RestTemplate restTemplate) {
@@ -144,7 +143,7 @@ public class GethRunner {
     }
 
     public void reset() throws IOException {
-        enodeUrl = null;
+        managedEnodeId = null;
         FileUtils.deleteDirectory(new File(gethConfig.getGethDataDirPath()));
     }
 
@@ -372,12 +371,16 @@ public class GethRunner {
     }
 
     public String getEnodeURL() throws IOException {
-        if(enodeUrl == null) {
-            enodeUrl = formatEnodeUrl(getLocalEthereumAddress(), "127.0.0.1",
-                gethConfig.getGethNodePort(),
-                gethConfig.getRaftPort());
+        return formatEnodeUrl(getLocalEthereumAddress(), "127.0.0.1",
+            gethConfig.getGethNodePort(),
+            gethConfig.getRaftPort());
+    }
+
+    public String getEnodeId() throws IOException {
+        if (managedEnodeId == null) {
+            managedEnodeId = getLocalEthereumAddress();
         }
-        return enodeUrl;
+        return managedEnodeId;
     }
 
     public String formatEnodeUrl(String address, String ip, String port, String raftPort) {

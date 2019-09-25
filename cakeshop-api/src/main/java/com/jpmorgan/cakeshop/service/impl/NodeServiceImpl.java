@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.jpmorgan.cakeshop.bean.GethConfig;
 import com.jpmorgan.cakeshop.bean.GethRunner;
 import com.jpmorgan.cakeshop.bean.TransactionManagerRunner;
+import com.jpmorgan.cakeshop.dao.NodeInfoDAO;
 import com.jpmorgan.cakeshop.dao.PeerDAO;
 import com.jpmorgan.cakeshop.error.APIException;
 import com.jpmorgan.cakeshop.model.Node;
@@ -50,6 +51,9 @@ public class NodeServiceImpl implements NodeService, GethRpcConstants {
 
     @Autowired
     private PeerDAO peerDAO;
+
+    @Autowired
+    private NodeInfoDAO nodeInfoDAO;
 
     private String enodeId = "";
 

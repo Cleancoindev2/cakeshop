@@ -8,7 +8,6 @@ import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
 import Container from "@material-ui/core/Container";
-import {getNodesFromLocalStorage, saveNodesToLocalStorage} from "./node_utils";
 
 export default class Manage extends Component {
     constructor(props) {
@@ -22,7 +21,21 @@ export default class Manage extends Component {
     }
 
     componentDidMount() {
-        this.setState({nodes: getNodesFromLocalStorage()});
+        let _this = this;
+
+        fetch(this.getUrl('api/node/nodes'), {
+            method: "GET",
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        })
+        .then((response => {return response.json()}))
+        .then(function (response) {
+            let nodes = response.data.attributes.result
+            console.log('nodes:', nodes)
+            _this.setState({nodes})
+        })
     }
 
     render() {
@@ -60,11 +73,12 @@ export default class Manage extends Component {
         this.setState({dialogOpen: true})
     };
 
-    onConfigLoaded = (config) => {
-        console.log("Config successfully loaded:", config);
-        if (config.nodes != null && config.nodes.length > 0) {
-            saveNodesToLocalStorage(config.nodes);
-            this.setState({nodes: config.nodes})
+    onConfigLoaded = (nodes) => {
+        console.log("Nodes successfully loaded:", nodes);
+        if (nodes != null && nodes.length > 0) {
+            config.nodes.forEach((node) => {
+                this.onSubmit(node)
+            })
         }
     };
 
@@ -72,24 +86,29 @@ export default class Manage extends Component {
         this.setState({dialogOpen: false})
     };
 
-    onSubmit = ({name, geth, tessera}) => {
+    onSubmit = (newNode) => {
         this.setState({dialogOpen: false});
-        const newNode = {
-            name,
-            geth: {
-                url: geth
+        fetch(this.getUrl("api/node/add"), {
+            method: "POST",
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
             },
-            tessera: {
-                url: tessera
-            }
-        };
-        this.setState((prevState) => {
-            const {nodes} = prevState;
-            let newNodes = [...nodes, newNode];
-            saveNodesToLocalStorage(newNodes);
-            return {
-                ...prevState,
-                nodes: newNodes
+            body: JSON.stringify(newNode)
+        }).then(response => {
+            console.log('add response:', response)
+            if (response.status === 201) {
+                console.log("Success:", response.status, response.statusText);
+                this.setState((prevState) => {
+                    const {nodes} = prevState;
+                    let newNodes = [...nodes, newNode];
+                    return {
+                        ...prevState,
+                        nodes: newNodes
+                    }
+                })
+            } else {
+                console.log("Error:", response.status, response.statusText);
             }
         })
     };
@@ -101,11 +120,7 @@ export default class Manage extends Component {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(
-                {
-                    url: node.geth.url,
-                    transactionManagerUrl: node.tessera.url
-                })
+            body: JSON.stringify(node)
         }).then(response => {
             if (response.status === 200) {
                 console.log("Success:", response.status, response.statusText);
@@ -126,13 +141,27 @@ export default class Manage extends Component {
     };
 
     onDismiss = (nodeToRemove) => {
-        this.setState((prevState) => {
-            const {nodes} = prevState;
-            let newNodes = nodes.filter((node) => node !== nodeToRemove);
-            saveNodesToLocalStorage(newNodes);
-            return {
-                ...prevState,
-                nodes: newNodes
+        fetch(this.getUrl("api/node/remove"), {
+            method: "POST",
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(nodeToRemove)
+        }).then(response => {
+            console.log('remove response:', response)
+            if (response.status === 204) {
+                console.log("Success:", response.status, response.statusText);
+                this.setState((prevState) => {
+                    const {nodes} = prevState;
+                    let newNodes = nodes.filter((node) => node !== nodeToRemove);
+                    return {
+                        ...prevState,
+                        nodes: newNodes
+                    }
+                })
+            } else {
+                console.log("Error:", response.status, response.statusText);
             }
         })
     }
